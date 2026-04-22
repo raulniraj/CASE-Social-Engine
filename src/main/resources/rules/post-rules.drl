@@ -1,0 +1,33 @@
+package rules;
+
+import com.caseapp.socialengine.entity.Post;
+import com.caseapp.socialengine.entity.PostRule;
+import com.caseapp.socialengine.enums.RuleAction;
+import com.caseapp.socialengine.enums.RuleType;
+import com.caseapp.socialengine.dto.LiveContext;
+
+dialect "java"
+
+// COMPLEX RULE 1: The Context-Aware Weather Block
+rule "Dynamic Weather Block Rule"
+when
+    $post : Post( status == "PENDING" )
+    // Check if the user attached a WEATHER rule wanting to BLOCK on a specific condition
+    $rule : PostRule( post == $post, ruleType == RuleType.WEATHER, action == RuleAction.BLOCK_POST, $targetWeather : conditionValue )
+    // Check the LIVE API data to see if the current weather actually matches the target weather!
+    $context : LiveContext( currentWeather == $targetWeather )
+then
+    System.out.println(">>> DROOLS: Live Weather API reports " + $targetWeather + ". Blocking Post ID: " + $post.getId());
+    $post.setStatus("BLOCKED");
+end
+
+// COMPLEX RULE 2: The Global Emergency Halt
+rule "Emergency Threat Block Rule"
+when
+    $post : Post( status == "PENDING" )
+    // If a severe news event is happening, block all outgoing posts to prevent tone-deaf marketing
+    $context : LiveContext( threateningEventActive == true )
+then
+    System.out.println(">>> DROOLS: GLOBAL EMERGENCY DETECTED! Halting Post ID: " + $post.getId() + " to prevent brand damage.");
+    $post.setStatus("BLOCKED"); 
+end
